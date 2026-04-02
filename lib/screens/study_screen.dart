@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'session_details_screen.dart';
 
 class StudyScreen extends StatefulWidget {
   const StudyScreen({super.key});
@@ -37,6 +38,7 @@ class _StudyScreenState extends State<StudyScreen> {
     String subject = "";
     String topic = "";
     String duration = "30";
+    String note = "";
 
     showModalBottomSheet(
       context: context,
@@ -57,16 +59,13 @@ class _StudyScreenState extends State<StudyScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
 
-              // Subject
               TextField(
-                decoration: const InputDecoration(labelText: "Subject"),
-                onChanged: (value) => subject = value,
-              ),
-
-              // Topic
-              TextField(
-                decoration: const InputDecoration(labelText: "Topic"),
-                onChanged: (value) => topic = value,
+                decoration: const InputDecoration(
+                  labelText: "Notes",
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+                onChanged: (value) => note = value,
               ),
 
               const SizedBox(height: 10),
@@ -100,28 +99,34 @@ class _StudyScreenState extends State<StudyScreen> {
               ),
 
               const SizedBox(height: 20),
-
-              ElevatedButton(
-                onPressed: () {
-                  if (subject.isNotEmpty && topic.isNotEmpty) {
-                    // 🔥 Generic structure (important)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (duration.isEmpty ||
+                        int.tryParse(duration) == null ||
+                        int.parse(duration) <= 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Fill all required fields"),
+                        ),
+                      );
+                      return;
+                    }
                     sessions.add({
-                      "title": "Study Session",
-                      "fields": {
-                        "subject": subject,
-                        "topic": topic,
-                        "duration": duration,
-                      },
+                      "name": "Session ${sessions.length + 1}",
+                      "duration": duration,
                       "date": DateTime.now().toString(),
+                      "note": note,
                     });
 
                     saveData();
                     loadData();
 
                     Navigator.pop(context);
-                  }
-                },
-                child: const Text("Add"),
+                  },
+                  child: const Text("Add Session"),
+                ),
               ),
             ],
           ),
@@ -146,10 +151,59 @@ class _StudyScreenState extends State<StudyScreen> {
                 return Card(
                   margin: const EdgeInsets.all(8),
                   child: ListTile(
-                    title: Text(fields["subject"].toString()),
-                    subtitle: Text(
-                      "${fields["topic"]} • ${fields["duration"]} min",
+                    title: Text(item["name"]),
+
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("${item["duration"]} min"),
+                        if ((item["note"] ?? "").isNotEmpty)
+                          Text("📝 ${item["note"]}"),
+                        Text(
+                          item["date"].toString().split(
+                            " ",
+                          )[0], // show date only
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
                     ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SessionDetailScreen(session: item),
+                        ),
+                      );
+                    },
+                    onLongPress: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: const Text("Delete Session"),
+                            content: const Text("Are you sure?"),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text("Cancel"),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  sessions.removeAt(index);
+                                  saveData();
+                                  loadData();
+                                  Navigator.pop(context);
+                                },
+                                child: const Text("Delete"),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
                   ),
                 );
               },

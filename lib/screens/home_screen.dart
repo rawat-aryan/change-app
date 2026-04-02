@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'study_screen.dart';
+// import 'study_screen.dart';
 import 'fitness_screen.dart';
 import 'tasks_screen.dart';
+import 'subject_screen.dart';
 import '../widgets/module_card.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -28,7 +29,7 @@ class HomeScreen extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const StudyScreen()),
+                  MaterialPageRoute(builder: (_) => const SubjectScreen()),
                 );
               },
             ),
